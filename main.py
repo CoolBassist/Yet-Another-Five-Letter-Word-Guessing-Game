@@ -10,7 +10,7 @@ console = Console()
 streak = 0
 
 while True:
-	if "win" in sys.platform:
+	if sys.platform.startswith('win'):
 		os.system("cls")
 	else:
 		os.system("clear")
