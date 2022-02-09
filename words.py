@@ -14,6 +14,7 @@ class Wordle:
 
     def get_new_word(self):
         self.word = La[random.randint(0, len(La)-1)]
+        self.guesses = 1
         return self.word
 
 
@@ -22,7 +23,7 @@ class Wordle:
             return "Please enter a fiver letter word"
 
         if word_guess == self.word:
-            self.has_won = True
+            self.win = True
             return ""
 
         guessed = [i for i in word_guess]
@@ -86,5 +87,6 @@ class Wordle:
         for word in self.guessed_words:
             rich.print(word)
         return ""
+
     def has_won(self):
         return self.win
