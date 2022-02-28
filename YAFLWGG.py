@@ -1,52 +1,111 @@
-import random
+from email import message
+from random import randint
 from rich.console import Console
-import wordlist
+from rich.prompt import Prompt
+from typing import List
+import os
+import sys
 
 class YAFLWGG:
     def __init__(self, mode="regular"):
-        self.win = False
-        self.current_word = ["-"]*5
-        self.jumbled_letters = []
-        self.guessed_words = []
-        self.guesses = 1
         self.console = Console()
         self.message = ""
+        self.streak = 0
+        self.qwerty = list("qwertyuiopasdfghjklzxcvbnm")
+        self.full_word_list = self.load_full_w_list()
+        self.word_list = self.load_word_list(mode)
+    
+    def load_full_w_list(self) -> List[str]:
+        from wordLists import F_wordlist
+        return F_wordlist[:]
+    
+    def load_word_list(self, mode: str) -> List[str]:
         if mode == "regular":
-            self.wordlist = wordlist.regular
-        elif mode == "hard":
-            self.wordlist = wordlist.hard
+            from wordLists import R_wordlist
+            return R_wordlist[:]
         else:
-            self.console.print("[white on red]Wordlist not recoginisable: " + mode + "[/white on red]")
-            exit()
-        
-    def get_new_word(self):
-        self.word = self.wordlist[random.randint(0, len(self.wordlist)-1)]
+            self.log("Unrecoginised word list:" + mode, "white on red")
+    
+    def new_game(self) -> None:
+        self.win = False
+        self.guessed_words = []
+        self.game_over = False
+        self.word = self.word_list[randint(0, len(self.word_list)-1)]
         self.guesses = 1
         self.alphabet = dict()
         for i in range(97, 123):
             self.alphabet[chr(i)] = 0
-        self.qwerty = list("qwertyuiopasdfghjklzxcvbnm")
-        
-        return self.word
 
-    def guess(self, word_guess):
+    def print_top(self) -> None:
+        if sys.platform.startswith('win'):
+            os.system("cls")
+        else:
+            os.system("clear")
+        self.print_title_rules()
+        self.print_streak()
+        if len(self.message) != 0:
+            self.console.print("[white on red]" + self.message + "[/white on red]", justify="center")
+        else:
+            print("")
+        self.print_alphabet()
+        self.print_prev_words()
+
+    def print_title_rules(self) -> None:
+        self.console.print("""╔═════════════════════╗
+║ Welcome to [bold u magenta]YAFLWGG[/bold u magenta]! ║
+╚═════════════════════╝""", justify="center")
+        self.console.print("[u]Rules[/u]:", justify="center", style="bold")
+        self.console.print("Guess the [b]word[/b] in 6 tries.", justify="center")
+        self.console.print("[green]w[/green]eary\nThe letter [b]w[/b] is in the word, and in the correct spot.", justify="center")
+        self.console.print("pi[red]l[/red]ot\nThe letter [b]l[/b] is in the word, but in the wrong spot.", justify="center", style="white")
+        self.console.print("[white]vague\nNone of these letters are in the word.[/white]", justify="center")
+
+    def print_streak(self) -> None:
+        self.console.print(f"\n\nCurrent Streak: {self.streak}", justify="center")
+
+    def print_alphabet(self) -> None:
+        current_row = ""
+        for i in self.qwerty:
+            if i in ['a', 'z']:
+                current_row += "\n"
+            if self.alphabet[i] == 1:
+                current_row += "[bold green]" + i + "[/bold green] "
+            if self.alphabet[i] == 2:
+                current_row += "[bold red]" + i + "[/bold red] "
+            if self.alphabet[i] == 3:
+                current_row += "[bold black]" + i + "[/bold black] "
+            if self.alphabet[i] == 0:
+                current_row += i + " "
+        self.console.print(current_row, justify="center")
+
+    def print_prev_words(self) -> None:
+        for i in range(len(self.guessed_words)):
+            print(f"guess {i+1}> ", end="")
+            self.console.print(self.guessed_words[i])
+
+    def parse_input(self, input: str) -> None:
         self.message = ""
+        if self.guesses >= 6:
+            self.game_over = True
+        if input[0] == "!":
+            self.parse_command(input)
+        else:
+            if len(input) != 5:
+                self.message = "Please enter a five letter word!"
+            elif input not in self.full_word_list:
+                self.message = "Word not in word list!"
+            else:
+                self.guess(input)
+
+    def guess(self, word_guess: str) -> None:
         correct_letters = ["-", "-", "-", "-", "-"]
         almost_letters = []
         wrong_letters = []
 
         word_guess = word_guess.lower()
-        
-        if len(word_guess) != 5:
-            self.message = "Please enter a five letter word"
-            return
         if word_guess == self.word:
             self.win = True
-            return
-        if word_guess not in self.wordlist:
-            self.message = "Word not in word list"  
-            return
-            
+            return        
 
         guessed = [i for i in word_guess]
         guessed_letters = []
@@ -84,27 +143,28 @@ class YAFLWGG:
 
         self.guesses += 1
 
-        return (correct_letters, almost_letters, wrong_letters)
+    def log(self, message, style:str="b") -> None:
+        message = str(message)
+        self.console.print("[" + style + "]" + message)
 
-    def has_won(self):
+    def has_won(self) -> None:
         return self.win
-
-    def print_words(self):
-        for i in range(len(self.guessed_words)):
-            print(f"guess {i+1}> ", end="")
-            self.console.print(self.guessed_words[i])
     
-    def print_alphabet(self):
-        current_row = "[center]"
-        for i in self.qwerty:
-            if i in ['a', 'z']:
-                current_row += "\n"
-            if self.alphabet[i] == 1:
-                current_row += "[bold green]" + i + "[/bold green] "
-            if self.alphabet[i] == 2:
-                current_row += "[bold red]" + i + "[/bold red] "
-            if self.alphabet[i] == 3:
-                current_row += "[bold black]" + i + "[/bold black] "
-            if self.alphabet[i] == 0:
-                current_row += i + " "
-        self.console.print(current_row + "[/center]", justify="center")
+    def is_game_over(self) -> None:
+        return self.win or self.game_over
+
+    def end_screen(self) -> None:
+        if self.win:
+            self.streak += 1
+            self.log(f"[green]You won![/green] You have increased your score to {self.streak}!")
+        else:
+            self.log(f"[red]You lost![/red] You lost your streak of {self.streak}!\nThe word was {self.word}!")
+            self.streak = 0
+    
+    def replay(self) -> None:
+        start_again = Prompt.ask("Do you want to play again?", choices=["yes", "no"])
+        if start_again == "no":
+            self.log("Good bye!", "white on blue")
+            exit()
+    
+    
