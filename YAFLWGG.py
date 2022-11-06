@@ -87,6 +87,9 @@ class YAFLWGG:
         self.message = ""
         if self.guesses >= 6:
             self.game_over = True
+        if len(input) == 0:
+            self.message = "Hey man you cant leave the input empty!"
+            return
         if input[0] == "!":
             self.parse_command(input)
         else:
