@@ -84,6 +84,7 @@ class YAFLWGG:
             self.console.print(self.guessed_words[i])
 
     def parse_input(self, input: str) -> None:
+        input = input.strip(" \t")
         self.message = ""
         if self.guesses >= 6:
             self.game_over = True
